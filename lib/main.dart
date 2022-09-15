@@ -40,52 +40,63 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   SqlDb _sqlDb = SqlDb();
+  bool isLoading = true;
+  List notess = [];
+
   Future<List<Map>> readData() async {
     List<Map> response = await _sqlDb.readData("SELECT * FROM 'notes'");
+    notess.addAll(response);
+    isLoading = false;
+
+    if (mounted) {
+      setState(() {});
+    }
     return response;
+  }
+
+  @override
+  void initState() {
+    readData();
+    super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-          width: double.infinity,
-          height: double.infinity,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.vertical,
-            child: RefreshIndicator(
-              onRefresh: () async {
-                setState(() {
-                  readData();
-                });
-              },
-              child: Column(
-                children: [
-                  FutureBuilder(
-                      future: readData(),
-                      builder: ((BuildContext context,
-                          AsyncSnapshot<List<Map>> snapshot) {
-                        if (snapshot.hasData) {
-                          return ListView.builder(
-                              shrinkWrap: true,
-                              itemCount: snapshot.data!.length,
-                              itemBuilder: ((context, index) {
-                                return Card(
-                                  child: ListTile(
-                                      title: Text(
-                                          "${snapshot.data![index].toString().split("{")[1]}")),
-                                );
-                              }));
-                        }
-                        return Center(
-                          child: CircularProgressIndicator(),
-                        );
-                      })),
-                  HomeTest(),
-                ],
-              ),
-            ),
-          )),
+      body: isLoading == true
+          ? Center(
+              child: Text("boody"),
+            )
+          : Container(
+              width: double.infinity,
+              height: double.infinity,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.vertical,
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    setState(() {});
+                  },
+                  child: Column(
+                    children: [
+                      ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: notess.length,
+                          itemBuilder: ((context, index) {
+                            if (notess.isNotEmpty) {
+                              return Card(
+                                child: ListTile(
+                                    title: Text("${notess[index].toString()}")),
+                              );
+                            }
+                            return Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          })),
+                      HomeTest(),
+                    ],
+                  ),
+                ),
+              )),
     );
   }
 }
@@ -100,7 +111,7 @@ class HomeTest extends StatefulWidget {
 class _HomeTestState extends State<HomeTest> {
   SqlDb sqlDb = SqlDb();
   TextEditingController controller = TextEditingController();
-
+  Home home = Home();
   Future get readData async {
     if (readData == null) {
       print(null);
@@ -143,6 +154,9 @@ class _HomeTestState extends State<HomeTest> {
                 onPressed: () async {
                   int response = await sqlDb.updateData(
                       "UPDATE 'notes' SET `note` = 'one two f' WHERE `id` = ${controller.text}");
+                  if (response > 0) {
+                    // home.notess.removewhere((element)=> element['id']==home.notess[i][])
+                  }
                   print(response);
                 },
                 child: Text("update data ")),
@@ -158,9 +172,7 @@ class _HomeTestState extends State<HomeTest> {
                           child: CircularProgressIndicator(),
                         ),
                         onRefresh: () async {
-                          setState(() async {
-                            await readData;
-                          });
+                          setState(() async {});
                         });
                   });
 
